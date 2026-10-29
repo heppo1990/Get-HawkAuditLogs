@@ -12,7 +12,7 @@ Param(
     [switch]$VerboseOutput
 )
 
-$ScriptVersion = '1.0.0'
+$ScriptVersion = '1.0.1'
 $GitHubRepository = 'heppo1990/Get-HawkAuditLogs'
 
 [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]::CreateSpecificCulture('en-US')
