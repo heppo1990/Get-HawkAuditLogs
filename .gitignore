@@ -1,11 +1,13 @@
-# Tenant-specific configuration can contain IDs, addresses, hosts and tokens.
-# Local backup and runtime output
+# Abgeleitete lokale Settings-Varianten und Laufzeitdateien
+Get-HawkAuditLogs.settings.*.json
 *.bak
 AuditLogs/
 ErrorDetails.txt
 ErrorLog.txt
+
+# Temporäre Dateien des Skript- und Settings-Updaters
 *.update.ps1
 *.update.sha256
 *.update.json
-
+Get-HawkAuditLogs.settings.json.update
 
