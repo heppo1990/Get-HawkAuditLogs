@@ -1,27 +1,29 @@
 # Get-HawkAuditLogs
 
-PowerShell wrapper for collecting Hawk forensic logs and Entra sign-in logs.
+PowerShell-Skript zum Sammeln von Hawk-Forensikdaten und Entra-Anmeldeprotokollen.
 
-## Setup
+## Einrichtung
 
-1. Download `Get-HawkAuditLogs.ps1` and `Get-HawkAuditLogs.settings.json` from the latest [GitHub release](https://github.com/heppo1990/Get-HawkAuditLogs/releases).
-2. Set `TenantID` in the settings file and configure mail fields if mail delivery is needed.
-3. For city and region enrichment, set `GeoLocation.ApiToken` to an IPinfo Legacy API token. IPinfo Lite does not include city or region. The script continues with unknown location values if the token is missing or a lookup fails.
-4. Run from PowerShell 7 as Administrator.
+1. Lade `Get-HawkAuditLogs.ps1` und `Get-HawkAuditLogs.settings.json` aus dem neuesten [GitHub-Release](https://github.com/heppo1990/Get-HawkAuditLogs/releases) herunter.
+2. Trage die `TenantID` in der Settings-Datei ein. Ergänze bei Bedarf die Mail-Einstellungen.
+3. Für die Standortanreicherung mit Stadt und Region trägst du unter `GeoLocation.ApiToken` einen IPinfo-Legacy-API-Token ein. IPinfo Lite liefert keine Stadt- oder Regionsangaben. Fehlt der Token oder schlägt eine Abfrage fehl, läuft das Skript mit unbekanntem Standort weiter.
+4. Starte das Skript in PowerShell 7 als Administrator.
 
-The settings file in this repository contains neutral values only. A deployed copy can contain tenant identifiers, mail addresses, hostnames and API tokens. Do not commit a configured settings file to this public repository.
+Die Settings-Datei im Repository enthält ausschließlich neutrale Standardwerte. Sie wird absichtlich nicht von `.gitignore` ausgeschlossen, damit genau diese eine Datei als Standard versioniert werden kann. Eine bereitgestellte und konfigurierte Kopie kann Mandantenkennungen, Mailadressen, Servernamen und API-Tokens enthalten. Eine konfigurierte Datei darf nicht in dieses öffentliche Repository hochgeladen werden.
 
-## Script and settings updates
+Die `.gitignore` schließt Backups, Laufzeitdateien und zusätzliche lokale Settings-Varianten aus. Sie kann Änderungen an der versionierten Standarddatei nicht ignorieren; führe das Skript deshalb für den Produktivbetrieb mit einer bereitgestellten Kopie außerhalb des Repository-Arbeitsverzeichnisses aus.
 
-At startup, the script checks the latest GitHub release and verifies SHA-256 checksums. A newer script is downloaded and restarted automatically. The settings file is updated from the same release: new keys are added, while existing values and custom keys are retained. `SettingsVersion` is advanced to the published version. Set `ScriptUpdates.Enabled` to `false` to disable online updates.
+## Skript- und Settings-Updates
 
-A push to `main` creates a GitHub release using `$ScriptVersion`. Increase that version in `Get-HawkAuditLogs.ps1` before publishing another release.
+Beim Start prüft das Skript das neueste GitHub-Release und kontrolliert die SHA-256-Prüfsummen. Ist eine neuere Skriptversion verfügbar, wird sie heruntergeladen und automatisch neu gestartet. Die Settings-Datei wird ebenfalls aktualisiert: Neue Schlüssel werden ergänzt, vorhandene Werte und zusätzliche eigene Schlüssel bleiben erhalten. `SettingsVersion` wird auf die veröffentlichte Version gesetzt. Mit `ScriptUpdates.Enabled: false` kannst du Online-Updates abschalten.
 
-## Module versions
+Ein Push auf `main` erstellt ein GitHub-Release anhand von `$ScriptVersion`. Erhöhe diese Version in `Get-HawkAuditLogs.ps1`, bevor du eine weitere Version veröffentlichst.
 
-Pinned module versions are read from `ModuleVersions` in the settings file. After a module update and collection, the script asks whether the run succeeded. Answering `J` saves the new module versions to the settings file.
+## Modulversionen
 
-## Geolocation
+Die festgelegten Modulversionen stehen unter `ModuleVersions` in der Settings-Datei. Nach einem Modulupdate und der Sammlung fragt das Skript, ob der Lauf erfolgreich war. Mit `J` werden die neuen Modulversionen in der Settings-Datei gespeichert.
 
-Public IP addresses are sent to IPinfo for lookup. The service can return approximate city and region data; this is a third-party disclosure and must not be treated as an exact physical location. See [IPinfo's plan comparison](https://support.ipinfo.io/hc/en-us/articles/34121895556242-Legacy-Free-API-vs-IPinfo-Lite) for current plan and quota details.
+## Geolokalisierung
+
+Öffentliche IP-Adressen werden zur Abfrage an IPinfo übermittelt. Die gelieferten Stadt- und Regionsangaben sind Näherungswerte und keine exakten physischen Standorte. Aktuelle Tarife und Kontingente findest du im [IPinfo-Tarifvergleich](https://support.ipinfo.io/hc/en-us/articles/34121895556242-Legacy-Free-API-vs-IPinfo-Lite).
 
