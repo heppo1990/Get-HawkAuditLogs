@@ -15,13 +15,17 @@ Die `.gitignore` schließt Backups, Laufzeitdateien und zusätzliche lokale Sett
 
 ## Skript- und Settings-Updates
 
-Beim Start prüft das Skript das neueste GitHub-Release und kontrolliert die SHA-256-Prüfsummen. Ist eine neuere Skriptversion verfügbar, wird sie heruntergeladen und automatisch neu gestartet. Die Settings-Datei wird ebenfalls aktualisiert: Neue Schlüssel werden ergänzt, vorhandene Werte und zusätzliche eigene Schlüssel bleiben erhalten. `SettingsVersion` wird auf die veröffentlichte Version gesetzt. Mit `ScriptUpdates.Enabled: false` kannst du Online-Updates abschalten.
+Beim Start prüft das Skript das neueste GitHub-Release und kontrolliert die SHA-256-Prüfsummen. Ist eine neuere Skriptversion verfügbar, wird sie heruntergeladen und automatisch neu gestartet. Die Settings-Datei wird ebenfalls aktualisiert: Neue Schlüssel werden ergänzt, vorhandene Werte und zusätzliche eigene Schlüssel bleiben erhalten. `SettingsVersion` wird aus der veröffentlichten Settings-Datei übernommen. Mit `ScriptUpdates.Enabled: false` kannst du Online-Updates abschalten.
 
 Ein Push auf `main` erstellt ein GitHub-Release anhand von `$ScriptVersion`. Erhöhe diese Version in `Get-HawkAuditLogs.ps1`, bevor du eine weitere Version veröffentlichst.
 
 ## Modulversionen
 
 Die festgelegten Modulversionen stehen unter `ModuleVersions` in der Settings-Datei. Nach einem Modulupdate und der Sammlung fragt das Skript, ob der Lauf erfolgreich war. Mit `J` werden die neuen Modulversionen in der Settings-Datei gespeichert.
+
+## Protokollabfrage und Bereinigung
+
+Die Graph-Abfrage begrenzt Anmeldeereignisse auf den eingestellten Zeitraum und gruppiert sie nach Benutzer, damit nicht für jeden Benutzer erneut alle Ereignisse durchsucht werden. Bei der Bereinigung werden Dateien mit dem Suffix `*_logs.csv` nur innerhalb der `Hawk_*`-Ordner entfernt. Wird dadurch ein älterer Ordner leer, wird auch dieser gelöscht. Der Ordner des aktuellen Laufs bleibt erhalten; gleichnamige Dateien außerhalb der Hawk-Ordner werden nicht entfernt.
 
 ## Geolokalisierung
 
