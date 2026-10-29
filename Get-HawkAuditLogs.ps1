@@ -438,7 +438,7 @@ Function Set-HawkIPGeolocationProvider {
                 if ($Response.org -match '(?i)\bMicrosoft\b') { $Result.KnownMicrosoftIP = 'True' }
             }
             catch {
-                Out-LogFile "IPinfo lookup failed; continuing without geolocation for an IP address." -isError
+                Out-LogFile "IPinfo-Abfrage fehlgeschlagen; das Skript läuft ohne Standortdaten für diese IP-Adresse weiter." -isError
             }
         }
 
