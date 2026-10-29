@@ -27,6 +27,8 @@ Die festgelegten Modulversionen stehen unter `ModuleVersions` in der Settings-Da
 
 Die Graph-Abfrage begrenzt Anmeldeereignisse auf den eingestellten Zeitraum und gruppiert sie nach Benutzer, damit nicht für jeden Benutzer erneut alle Ereignisse durchsucht werden. Bei der Bereinigung werden Dateien mit dem Suffix `*_logs.csv` nur innerhalb der `Hawk_*`-Ordner entfernt. Wird dadurch ein älterer Ordner leer, wird auch dieser gelöscht. Der Ordner des aktuellen Laufs bleibt erhalten; gleichnamige Dateien außerhalb der Hawk-Ordner werden nicht entfernt.
 
+Erwartete Fälle ohne Exchange-Postfach werden als solche gezählt und nicht in Fehlerprotokolle geschrieben. Bei echten Fehlern liegen `ErrorLog.txt` und `ErrorDetails.txt` zusammen im erkannten Hawk-Laufordner; falls dieser noch nicht existiert, im Basisordner `C:\Skripte\AuditLogs`.
+
 ## Geolokalisierung
 
 Öffentliche IP-Adressen werden zur Abfrage an IPinfo übermittelt. Die gelieferten Stadt- und Regionsangaben sind Näherungswerte und keine exakten physischen Standorte. Aktuelle Tarife und Kontingente findest du im [IPinfo-Tarifvergleich](https://support.ipinfo.io/hc/en-us/articles/34121895556242-Legacy-Free-API-vs-IPinfo-Lite).
