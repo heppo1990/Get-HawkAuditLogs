@@ -12,7 +12,7 @@ Param(
     [switch]$VerboseOutput
 )
 
-$ScriptVersion = '1.0.1'
+$ScriptVersion = '1.0.2'
 $GitHubRepository = 'heppo1990/Get-HawkAuditLogs'
 
 [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]::CreateSpecificCulture('en-US')
@@ -171,6 +171,14 @@ Function Merge-SettingsDefaults {
         }
     }
     return $Current
+}
+
+Function Get-HawkTelemetryFiles {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Container)) { return }
+    Get-ChildItem -LiteralPath $Path -Recurse -File -Filter '*_logs.csv' -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -like '*_logs.csv' }
 }
 
 # ============================================================================
@@ -541,10 +549,9 @@ Function Get-UserSignInLogs {
     try {
         $StartDateTime = (Get-Date).AddDays(-$DaysBack)
         if ($null -eq $Global:AllSignInLogs -or $Global:AllSignInLogs.Count -eq 0) { return $false }
+        if ($null -eq $Global:SignInLogsByUser -or -not $Global:SignInLogsByUser.ContainsKey($UserPrincipalName)) { return $false }
 
-        $SignInLogs = $Global:AllSignInLogs | Where-Object {
-            $_.UserPrincipalName -eq $UserPrincipalName -and $_.CreatedDateTime -ge $StartDateTime
-        }
+        $SignInLogs = @($Global:SignInLogsByUser[$UserPrincipalName] | Where-Object { $_.CreatedDateTime -ge $StartDateTime })
 
         if ($SignInLogs -and $SignInLogs.Count -gt 0) {
             if (-not (Test-Path $UserFolderPath)) { return $false }
@@ -606,6 +613,8 @@ if (-not (Test-PowerShell7)) {
 
 try {
     $ScriptSettings = Initialize-DeploymentSettings
+    Update-ScriptFromGitHub
+    $ScriptSettings = Initialize-DeploymentSettings
     $TenantID = [string]$ScriptSettings.TenantID
     $TenantGuid = [guid]::Empty
     if (-not [guid]::TryParse($TenantID, [ref]$TenantGuid) -or $TenantGuid -eq [guid]::Empty) {
@@ -617,7 +626,6 @@ try {
         }
         $PinnedVersions[$ModuleName] = [string]$ScriptSettings.ModuleVersions[$ModuleName]
     }
-    Update-ScriptFromGitHub
 }
 catch {
     Write-Host "`n[FEHLER] Einstellungen: $($_.Exception.Message)" -ForegroundColor Red
@@ -717,11 +725,24 @@ Remove-Variable -Name Hawk -Scope Global -ErrorAction SilentlyContinue
 # Alle Anmelde-Logs einmalig laden
 Write-Log "`n  Lade alle Anmelde-Logs aus Graph Beta API (einmalig)..." -Color White
 $Global:AllSignInLogs = @()
+$Global:SignInLogsByUser = @{}
 try {
-    $Global:AllSignInLogs = Get-MgBetaAuditLogSignIn -All -ErrorAction Stop
+    $SignInStartUtc = $StartDate.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ', [System.Globalization.CultureInfo]::InvariantCulture)
+    $SignInFilter = "createdDateTime ge $SignInStartUtc"
+    $Global:AllSignInLogs = @(Get-MgBetaAuditLogSignIn -Filter $SignInFilter -All -ErrorAction Stop)
+    foreach ($SignInLog in $Global:AllSignInLogs) {
+        $LogUserPrincipalName = [string]$SignInLog.UserPrincipalName
+        if ([string]::IsNullOrWhiteSpace($LogUserPrincipalName)) { continue }
+        if (-not $Global:SignInLogsByUser.ContainsKey($LogUserPrincipalName)) {
+            $Global:SignInLogsByUser[$LogUserPrincipalName] = [System.Collections.Generic.List[object]]::new()
+        }
+        $Global:SignInLogsByUser[$LogUserPrincipalName].Add($SignInLog)
+    }
     Write-Log "  [ERFOLG] $($Global:AllSignInLogs.Count) Anmelde-Einträge geladen" -Color Green
 }
 catch {
+    $Global:AllSignInLogs = @()
+    $Global:SignInLogsByUser = @{}
     Write-Log "  [WARNUNG] Anmelde-Logs nicht verfügbar: $($_.Exception.Message)" -Color Yellow
 }
 
@@ -876,7 +897,7 @@ try {
 
     foreach ($Folder in $AllHawkFolders) {
         # Zuerst Telemetrie-Dateien in diesem Ordner löschen
-        $TelFiles = Get-ChildItem -Path $Folder.FullName -Recurse -Filter "*_logs.csv" -ErrorAction SilentlyContinue
+        $TelFiles = Get-HawkTelemetryFiles -Path $Folder.FullName
         foreach ($TelFile in $TelFiles) {
             Remove-Item -Path $TelFile.FullName -Force -ErrorAction SilentlyContinue
         }
@@ -898,7 +919,7 @@ try {
 
     # Auch im aktuellen Lauf-Ordner Telemetrie aufräumen
     if ($Global:HawkOutputPath -and (Test-Path $Global:HawkOutputPath)) {
-        $TelFiles = Get-ChildItem -Path $Global:HawkOutputPath -Recurse -Filter "*_logs.csv" -ErrorAction SilentlyContinue
+        $TelFiles = Get-HawkTelemetryFiles -Path $Global:HawkOutputPath
         $TelemetryCount = 0
         foreach ($TelFile in $TelFiles) {
             try { Remove-Item -Path $TelFile.FullName -Force -ErrorAction Stop; $TelemetryCount++ }
@@ -1084,8 +1105,11 @@ try {
 
 # Abschliessende Telemetrie-Bereinigung nach Logging-Stop
 Start-Sleep -Milliseconds 500
-Get-ChildItem -Path $ZielPfadAuditLogsBase -Recurse -Filter "*_logs.csv" -ErrorAction SilentlyContinue |
-    ForEach-Object { Remove-Item -Path $_.FullName -Force -ErrorAction SilentlyContinue }
+Get-ChildItem -LiteralPath $ZielPfadAuditLogsBase -Directory -Filter 'Hawk_*' -ErrorAction SilentlyContinue |
+    ForEach-Object {
+        Get-HawkTelemetryFiles -Path $_.FullName |
+            ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue }
+    }
 
 # Finale Bereinigung: alle leeren Hawk-Ordner löschen (außer aktuellem Lauf)
 Get-ChildItem -Path $ZielPfadAuditLogsBase -Directory -ErrorAction SilentlyContinue |
