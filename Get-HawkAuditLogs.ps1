@@ -12,7 +12,7 @@ Param(
     [switch]$VerboseOutput
 )
 
-$ScriptVersion = '1.0.2'
+$ScriptVersion = '1.0.3'
 $GitHubRepository = 'heppo1990/Get-HawkAuditLogs'
 
 [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]::CreateSpecificCulture('en-US')
@@ -816,15 +816,6 @@ foreach ($User in $AllUsers) {
     }
     catch {
         $ErrorMessage = $_.Exception.Message
-		    # Temporäre Diagnose für den vollständigen Fehler
-    Add-Content -Path (Join-Path $Global:HawkBasePath "ErrorDetails.txt") -Value @"
-Zeit: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
-Benutzer: $($User.UserPrincipalName)
-Fehlertyp: $($_.Exception.GetType().FullName)
-Fehlerdetails: $($_.Exception.ToString())
-Aufrufstapel: $($_.ScriptStackTrace)
-================================================
-"@
         if ($ErrorMessage -match "couldn't be found|NotFound|no mailbox|Mailbox not found") {
             Write-Log "  [$UserCounter/$($AllUsers.Count)] --  $($User.UserPrincipalName) (kein Postfach)" -Color DarkCyan
             $NoMailboxCount++
@@ -834,14 +825,24 @@ Aufrufstapel: $($_.ScriptStackTrace)
             Write-Log "      $($ErrorMessage.Substring(0, [Math]::Min(120, $ErrorMessage.Length)))" -Color DarkRed
             $ErrorCount++
 
+            $ErrorLogDirectory = if ($Global:HawkOutputPath) { $Global:HawkOutputPath } else { $Global:HawkBasePath }
+            $ErrorLogFile = Join-Path $ErrorLogDirectory 'ErrorLog.txt'
+            $ErrorDetailsPath = Join-Path $ErrorLogDirectory 'ErrorDetails.txt'
+
+            Add-Content -LiteralPath $ErrorDetailsPath -Value @"
+Zeit: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+Benutzer: $($User.UserPrincipalName)
+Fehlertyp: $($_.Exception.GetType().FullName)
+Fehlerdetails: $($_.Exception.ToString())
+Aufrufstapel: $($_.ScriptStackTrace)
+================================================
+"@ -ErrorAction SilentlyContinue
+
             if ($null -eq $Global:HawkOutputPath) {
                 # Kein Fallback-Ordner anlegen - ErrorLog direkt ins Basisverzeichnis schreiben
-                $ErrorLogFile = Join-Path $Global:HawkBasePath "ErrorLog.txt"
+                Write-Log "  [INFO] Fehlerprotokolle liegen im Basisverzeichnis: $ErrorLogDirectory" -Color Gray
             }
-            else {
-                $ErrorLogFile = Join-Path $Global:HawkOutputPath "ErrorLog.txt"
-            }
-            Add-Content -Path $ErrorLogFile -Value "================================================`nZeit: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')`nBenutzer: $($User.UserPrincipalName)`nFehler: $ErrorMessage`n================================================`n`n" -ErrorAction SilentlyContinue
+            Add-Content -LiteralPath $ErrorLogFile -Value "================================================`nZeit: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')`nBenutzer: $($User.UserPrincipalName)`nFehler: $ErrorMessage`n================================================`n`n" -ErrorAction SilentlyContinue
         }
     }
 
