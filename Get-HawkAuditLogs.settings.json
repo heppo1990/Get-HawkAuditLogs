@@ -1,0 +1,40 @@
+{
+  "SettingsVersion": 1,
+  "TenantID": "",
+  "ModuleVersions": {
+    "PSFramework": "1.14.457",
+    "PSAppInsights": "0.9.6",
+    "ExchangeOnlineManagement": "3.9.2",
+    "Microsoft.Graph.Authentication": "2.41.1",
+    "Microsoft.Graph.Users": "2.41.1",
+    "Microsoft.Graph.Identity.SignIns": "2.41.1",
+    "Microsoft.Graph.Identity.DirectoryManagement": "2.41.1",
+    "Microsoft.Graph.Applications": "2.41.1",
+    "Microsoft.Graph.Reports": "2.41.1",
+    "Microsoft.Graph.Beta.Reports": "2.41.1",
+    "Hawk": "4.0"
+  },
+  "GeoLocation": {
+    "Provider": "IPinfo",
+    "ApiToken": ""
+  },
+  "ScriptUpdates": {
+    "Enabled": true
+  },
+  "MailSettings": {
+    "CompanyName": "",
+    "Host": "",
+    "Port": 25,
+    "UseSSL": false,
+    "Auth": false,
+    "AuthUser": "",
+    "AuthPass": "",
+    "Sender": "",
+    "MailTo": "",
+    "MailCC": "",
+    "MailBCC": "",
+    "SendMail": false,
+    "Subject": "Hawk Audit Log Zusammenfassung"
+  }
+}
+

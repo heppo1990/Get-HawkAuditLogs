@@ -1,0 +1,45 @@
+name: Publish script release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - Get-HawkAuditLogs.ps1
+      - Get-HawkAuditLogs.settings.json
+      - README.md
+      - .github/workflows/release.yml
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Create release for script version
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $content = Get-Content -LiteralPath 'Get-HawkAuditLogs.ps1' -Raw
+          $match = [regex]::Match($content, "\`$ScriptVersion\s*=\s*'([^']+)'")
+          if (-not $match.Success) { throw 'Could not read $ScriptVersion from script.' }
+          $version = $match.Groups[1].Value
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Invalid release version: $version" }
+          $tag = "v$version"
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Release $tag already exists; nothing to publish."
+            exit 0
+          }
+          $hash = (Get-FileHash -LiteralPath 'Get-HawkAuditLogs.ps1' -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -LiteralPath 'Get-HawkAuditLogs.ps1.sha256' -Value "$hash  Get-HawkAuditLogs.ps1" -Encoding ascii
+          $settingsHash = (Get-FileHash -LiteralPath 'Get-HawkAuditLogs.settings.json' -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -LiteralPath 'Get-HawkAuditLogs.settings.json.sha256' -Value "$settingsHash  Get-HawkAuditLogs.settings.json" -Encoding ascii
+          gh release create $tag 'Get-HawkAuditLogs.ps1' 'Get-HawkAuditLogs.ps1.sha256' 'Get-HawkAuditLogs.settings.json' 'Get-HawkAuditLogs.settings.json.sha256' --title "Get-HawkAuditLogs $tag" --generate-notes --target $env:GITHUB_SHA
+          if ($LASTEXITCODE -ne 0) { throw "GitHub release creation failed for $tag." }
+

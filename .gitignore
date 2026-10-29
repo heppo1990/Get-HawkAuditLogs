@@ -1,0 +1,11 @@
+# Tenant-specific configuration can contain IDs, addresses, hosts and tokens.
+# Local backup and runtime output
+*.bak
+AuditLogs/
+ErrorDetails.txt
+ErrorLog.txt
+*.update.ps1
+*.update.sha256
+*.update.json
+
+
